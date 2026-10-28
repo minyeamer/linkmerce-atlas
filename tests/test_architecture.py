@@ -108,6 +108,17 @@ with DAG(dag_id='store_order', schedule='@daily'):
                 self.assertTrue(all(eid in {e['id'] for e in context['evidence']} for eid in edge['support']))
         self.assertIn('dbt_postgres', graph.evidence_answer(context))
 
+    def test_documentation_and_plugin_implementation_have_evidence(self):
+        dag_path = self.root / 'airflow/dags/order.py'
+        dag_path.write_text('"""Store order runs conditionally."""\n' + dag_path.read_text())
+        snapshot = Indexer(self.root).build()
+        dag_evidence = [snapshot['evidence'][eid]['snippet'] for eid in snapshot['nodes']['dag:store_order']['evidence']]
+        self.assertIn('Store order runs conditionally.', dag_evidence)
+        plugin_evidence = [snapshot['evidence'][eid]['snippet'] for eid in snapshot['nodes']['plugin:dual_load']['evidence']]
+        self.assertTrue(any('def load_table_from_duckdb' in text for text in plugin_evidence))
+        self.assertIn('extractor_version', snapshot['meta'])
+        self.assertIn('ontology_version', snapshot['meta'])
+
     def test_symlink_cannot_read_outside_repository(self):
         with tempfile.TemporaryDirectory() as outside:
             secret = Path(outside) / 'secret.py'

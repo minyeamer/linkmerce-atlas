@@ -127,6 +127,16 @@ class Indexer:
                                 description=(ast.get_docstring(tree) or "")[:2600],
                                 schedule=ast.get_source_segment(self.read(path), schedule) if schedule else None)
                 self.modules[path] = key
+            # 설명에 쓰는 문서 문자열도 독립적인 출처로 인용할 수 있게 한다.
+            description = ast.get_docstring(tree)
+            if description and key in self.nodes:
+                self.node(key, "", "", "", self.ev(path, tree.body[0].lineno,
+                          snippet=description[:4000]))
+            if "/plugins/" in path:
+                public = [item for item in tree.body if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef))
+                          and not item.name.startswith("_")]
+                for item in public[:6]:
+                    self.node(key, "", "", "", self.ev(path, item.lineno, min(item.end_lineno, item.lineno + 30)))
 
     def config_tables(self):
         path = "src/env/config.yaml"
@@ -369,7 +379,10 @@ class Indexer:
             for start in range(0, min(len(lines), 270), 22):
                 overview.append(self.ev("README.md", start + 1, start + 22))
         commit = subprocess.run(["git", "-c", f"safe.directory={self.root}", "-C", str(self.root), "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip() if shutil.which("git") else ""
-        fingerprint = hashlib.sha256(str(sorted(self.files.items())).encode()).hexdigest()
+        extractor_version = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+        rules = Path(__file__).parents[1] / "ontology/linkmerce.dl"
+        ontology_version = hashlib.sha256(rules.read_bytes()).hexdigest()
+        fingerprint = hashlib.sha256((str(sorted(self.files.items())) + extractor_version + ontology_version).encode()).hexdigest()
         return {"nodes": self.nodes, "edges": self.edges, "evidence": self.evidence, "overview": overview,
                 "warnings": self.warnings, "meta": {"indexed_at": datetime.now(timezone.utc).isoformat(),
-                "commit": commit, "fingerprint": fingerprint, "files": len(self.files), "analysis": "static"}}
+                "commit": commit, "fingerprint": fingerprint, "extractor_version": extractor_version, "ontology_version": ontology_version, "files": len(self.files), "analysis": "static"}}
