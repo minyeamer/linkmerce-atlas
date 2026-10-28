@@ -129,6 +129,9 @@ test("the message integration renders assistant Markdown and keeps user text lit
         derived_paths: 0,
         files: 0,
         warnings: [],
+        package_version: "1.0.22",
+        commit: "a".repeat(40),
+        source_dirty: true,
         fingerprint: "test",
         wirelog_revision: "test",
         indexed_at: "2026-10-28T00:00:00Z",
@@ -148,5 +151,9 @@ test("the message integration renders assistant Markdown and keeps user text lit
   assert.equal(assistant.querySelector("strong").textContent, "강조");
   assert(assistant.querySelector("button.cite"));
   await new Promise((resolve) => setImmediate(resolve));
+  const revision = dom.window.document.getElementById("revision").textContent;
+  assert(revision.includes("v1.0.22"));
+  assert(revision.includes("a".repeat(40)));
+  assert(revision.includes("로컬 변경 있음"));
   dom.window.close();
 });

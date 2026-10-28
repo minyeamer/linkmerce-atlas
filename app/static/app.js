@@ -104,7 +104,7 @@ async function loadStats() {
     );
   }
   $("revision").textContent =
-    `Source commit ${stats.commit || "unknown"} · Snapshot ${stats.fingerprint.slice(0, 16)} · Wirelog ${stats.wirelog_revision.slice(0, 12)}`;
+    `Linkmerce ${stats.package_version ? "v" + stats.package_version : "version unknown"} · Source commit ${stats.commit || "unknown"}${stats.source_dirty === true ? " (로컬 변경 있음)" : stats.source_dirty == null ? " (변경 상태 미확인)" : ""} · Snapshot ${stats.fingerprint.slice(0, 16)} · Wirelog ${stats.wirelog_revision.slice(0, 12)}`;
 }
 function cite(id, label) {
   const button = element("button", label || "출처 ↗", "cite");

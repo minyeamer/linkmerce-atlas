@@ -6,6 +6,7 @@ RUN git init /opt/wirelog-src && cd /opt/wirelog-src && git remote add origin ht
 RUN meson setup /opt/wirelog-src/build /opt/wirelog-src --prefix=/usr/local --libdir=lib -Dtests=false -Dwirelog_log_max_level=error -Db_lto=false && meson compile -C /opt/wirelog-src/build && meson install -C /opt/wirelog-src/build
 
 FROM python:3.12-slim-bookworm
+RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates && rm -rf /var/lib/apt/lists/*
 ARG WIRELOG_REV=63f75a25139795b79f0ca75783c9d771c8fc892f
 ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 WIRELOG_LIBRARY=/usr/local/lib/libwirelog.so WIRELOG_REV=${WIRELOG_REV} LINKMERCE_ROOT=/source/linkmerce
 COPY --from=wirelog /usr/local/lib/libwirelog.so* /usr/local/lib/

@@ -4,10 +4,12 @@ from collections import defaultdict
 from datetime import datetime, timezone
 import fnmatch
 import hashlib
+import json
 import re
 from pathlib import Path
 import subprocess
 import shutil
+import tomllib
 
 import yaml
 
@@ -364,6 +366,36 @@ class Indexer:
                 except ValueError as exc:
                     self.warnings.append({"path": path, "selector": spec["name"], "reason": str(exc)})
 
+    def source_metadata(self):
+        """패키지 버전과 실제 색인한 Git 리비전을 기록한다."""
+        version, version_evidence = None, None
+        path = "pyproject.toml"
+        if (self.root / path).is_file():
+            try:
+                text = self.read(path)
+                project = tomllib.loads(text).get("project", {})
+                if project.get("name") == "linkmerce" and isinstance(project.get("version"), str):
+                    version = project["version"]
+                    section = re.search(r"^\[project\]\s*$", text, re.M)
+                    line = text.count("\n", 0, section.start()) + 1 if section else 1
+                    version_evidence = self.ev(path, line, snippet="[project]\nname = \"linkmerce\"\nversion = " + json.dumps(version))
+            except (tomllib.TOMLDecodeError, UnicodeError):
+                self.warnings.append({"path": path, "reason": "Package metadata could not be parsed"})
+        commit, dirty = "", None
+        if shutil.which("git"):
+            command = ["git", "--no-optional-locks", "-c", f"safe.directory={self.root}", "-c", "core.fsmonitor=false", "-C", str(self.root)]
+            try:
+                revision = subprocess.run(command + ["rev-parse", "HEAD"], capture_output=True, text=True, timeout=10)
+                if revision.returncode == 0 and re.fullmatch(r"[0-9a-f]{40,64}", revision.stdout.strip()):
+                    commit = revision.stdout.strip()
+                    status = subprocess.run(command + ["status", "--porcelain", "--untracked-files=normal"],
+                                            capture_output=True, text=True, timeout=10)
+                    if status.returncode == 0:
+                        dirty = bool(status.stdout.strip())
+            except (OSError, subprocess.TimeoutExpired):
+                pass
+        return version, version_evidence, commit, dirty
+
     def build(self):
         if not (self.root / "src/linkmerce").is_dir():
             raise ValueError("Linkmerce source directory not found")
@@ -378,11 +410,14 @@ class Indexer:
             lines = self.read("README.md").splitlines()
             for start in range(0, min(len(lines), 270), 22):
                 overview.append(self.ev("README.md", start + 1, start + 22))
-        commit = subprocess.run(["git", "-c", f"safe.directory={self.root}", "-C", str(self.root), "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip() if shutil.which("git") else ""
+        package_version, version_evidence, commit, source_dirty = self.source_metadata()
+        if version_evidence:
+            overview.insert(0, version_evidence)
         extractor_version = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
         rules = Path(__file__).parents[1] / "ontology/linkmerce.dl"
         ontology_version = hashlib.sha256(rules.read_bytes()).hexdigest()
         fingerprint = hashlib.sha256((str(sorted(self.files.items())) + extractor_version + ontology_version).encode()).hexdigest()
         return {"nodes": self.nodes, "edges": self.edges, "evidence": self.evidence, "overview": overview,
                 "warnings": self.warnings, "meta": {"indexed_at": datetime.now(timezone.utc).isoformat(),
-                "commit": commit, "fingerprint": fingerprint, "extractor_version": extractor_version, "ontology_version": ontology_version, "files": len(self.files), "analysis": "static"}}
+                "commit": commit, "source_dirty": source_dirty, "package_version": package_version,
+                "version_evidence": version_evidence, "fingerprint": fingerprint, "extractor_version": extractor_version, "ontology_version": ontology_version, "files": len(self.files), "analysis": "static"}}

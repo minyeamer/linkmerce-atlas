@@ -4,7 +4,9 @@ import re
 
 from .engine import Wirelog
 
-ALIASES = {"스마트스토어": "smartstore", "쿠팡": "coupang", "사방넷": "sabangnet",
+ALIASES = {"esm plus": "ebay esmplus", "esm 플러스": "ebay esmplus", "esm플러스": "ebay esmplus",
+           "이베이": "ebay", "지마켓": "ebay gmarket", "g마켓": "ebay gmarket", "옥션": "ebay auction",
+           "스마트스토어": "smartstore", "쿠팡": "coupang", "사방넷": "sabangnet",
            "광고": "ads", "주문": "order", "매출": "sales", "상품": "product", "재고": "stock",
            "포스트그레스": "postgres", "빅쿼리": "bigquery", "에어플로우": "airflow"}
 
@@ -34,7 +36,7 @@ class Graph:
         for ko, en in ALIASES.items():
             query = query.replace(ko, " " + en + " ")
         tokens = re.findall(r"[a-z][a-z0-9_.]+", query)
-        generic = {"core", "api", "airflow", "dbt", "dag", "postgres", "postgresql", "bigquery", "model", "models"}
+        generic = {"core", "api", "airflow", "dbt", "dag", "dags", "postgres", "postgresql", "bigquery", "model", "models"}
         specific = [t for t in tokens if t not in generic]
         scored = []
         for n in self.nodes.values():
@@ -50,6 +52,8 @@ class Graph:
                     score += 100
                 elif token in haystack:
                     score += (3 if token in generic else 20 + len(token))
+            if n["kind"] == "dag" and any(t in {"dag", "dags"} for t in tokens):
+                score += 40
             if not query:
                 score = 1
             if score:
@@ -119,6 +123,9 @@ class Graph:
         ev_ids = list(dict.fromkeys([eid for e in selected for eid in [e["evidence"], *e.get("support", [])]] + [e for n in seeds for e in n["evidence"]]))
         if len(seeds) < 2 or any(word in question for word in ["전체", "구조", "처음", "역할", "architecture", "core", "api"]):
             ev_ids += self.data["overview"]
+        version_evidence = self.data["meta"].get("version_evidence")
+        if version_evidence:
+            ev_ids.insert(0, version_evidence)
         evidence, budget = [], 32000
         for eid in dict.fromkeys(ev_ids):
             e = self.data["evidence"][eid]
@@ -129,7 +136,8 @@ class Graph:
         allowed = {e["id"] for e in evidence}
         selected = [e for e in selected if e["evidence"] in allowed]
         keys = {k for e in selected for k in (e["source"], e["target"])} | {n["id"] for n in seeds}
-        return {"question": question, "entities": seeds, "nodes": [self.nodes[k] for k in sorted(keys)],
+        return {"question": question, "source": {key: self.data["meta"].get(key)
+                for key in ("package_version", "commit", "source_dirty", "fingerprint")}, "entities": seeds, "nodes": [self.nodes[k] for k in sorted(keys)],
                 "relations": selected, "evidence": evidence,
                 "scope": "코드의 정적 선언. 운영 실행 성공/실제 데이터/동적 조건 충족 여부는 알 수 없음.",
                 "retrieval": "이름·별칭 검색과 Wirelog 도달 관계. 전체 관계의 완전한 검색을 보장하지 않음."}

@@ -32,6 +32,7 @@ class WebTests(unittest.TestCase):
         self.assertEqual(result.status_code, 200)
         self.assertTrue(result.json()['relations'])
         self.assertTrue(result.json()['evidence'])
+        self.assertEqual(result.json()['source']['fingerprint'], self.client.get('/api/stats').json()['fingerprint'])
         self.assertEqual(self.client.get('/api/auth/chatgpt').status_code, 503)
         self.assertEqual(self.client.post('/api/ask', json={'question': '질문', 'mode': 'ai'}).status_code, 401)
 

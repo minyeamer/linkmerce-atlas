@@ -161,4 +161,4 @@ async def ask(body: Question, request: Request):
         audit.append("AI 답변에 확인 가능한 출처 인용이 없습니다.")
     return {"answer": result, "provider": provider, "evidence": context["evidence"],
             "entities": context["entities"], "relations": context["relations"], "audit": audit,
-            "fingerprint": current.data["meta"]["fingerprint"], "scope": context["scope"]}
+            "fingerprint": current.data["meta"]["fingerprint"], "source": context["source"], "scope": context["scope"]}
