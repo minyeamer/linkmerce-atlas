@@ -98,6 +98,9 @@ OAuth 연동 코드는 등록 정보를 전제로 하며, 실제 승인 클라�
 
 ## 무엇을 온톨로지로 정의했는가
 
+**개념·식별자·관계·근거·추론 범위의 전체 명세는 [온톨로지 문서](ontology/README.md)에 있다.**
+`ontology/linkmerce.dl`은 그중 Wirelog가 실행하는 도달 규칙 파일이다.
+
 `module`, `function`, `dag`, `plugin`, `table`, `source`, `model`, `macro`, `selector`를 구성요소로 정의하고 아래 관계를 추출한다. 관계의 방향은 **선행 요소 → 후행 요소**다.
 
 | 관계 | 의미 | 해석의 한계 |
