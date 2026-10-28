@@ -56,6 +56,7 @@ class Indexer:
         return text
 
     def ev(self, relative, line, end=None, snippet=None):
+        normalized = snippet is not None
         if snippet is None:
             text = self.read(relative)
             lines = text.splitlines()
@@ -63,7 +64,7 @@ class Indexer:
             snippet = "\n".join(lines[max(line - 1, 0):end])
         snippet = re.sub(r"(?:sk-[A-Za-z0-9_-]{16,}|xox[baprs]-[A-Za-z0-9-]+)", "[REDACTED]", snippet)
         key = "E" + hashlib.sha256(f"{relative}:{line}:{snippet}".encode()).hexdigest()[:12]
-        self.evidence[key] = {"id": key, "path": relative, "line": line, "end": end or line, "snippet": snippet}
+        self.evidence[key] = {"id": key, "path": relative, "line": line, "end": end or line, "snippet": snippet, "format": "normalized" if normalized else "excerpt"}
         return key
 
     def node(self, key, label, kind, layer, evidence=None, **extra):
@@ -73,14 +74,14 @@ class Indexer:
             self.nodes[key]["evidence"].append(evidence)
         return key
 
-    def edge(self, source, target, relation, evidence, dependency=True, certainty="declared"):
+    def edge(self, source, target, relation, evidence, dependency=True, certainty="declared", support=None):
         if source == target or source not in self.nodes or target not in self.nodes:
             return
         key = (source, target, relation, evidence)
         if key not in self._edge_keys:
             self._edge_keys.add(key)
             self.edges.append({"source": source, "target": target, "relation": relation,
-                               "evidence": evidence, "dependency": dependency, "certainty": certainty})
+                               "evidence": evidence, "dependency": dependency, "certainty": certainty, "support": support or []})
 
     def paths(self, pattern):
         return sorted(p.relative_to(self.root).as_posix() for p in self.root.glob(pattern)
@@ -192,6 +193,9 @@ class Indexer:
                         constants[item.targets[0].id] = value
             config_keys = set()
             load_calls = []
+            dual_load_bindings = {alias.asname or alias.name for item in ast.walk(tree)
+                                  if isinstance(item, ast.ImportFrom) and item.module == "dual_load"
+                                  for alias in item.names}
             for item in ast.walk(tree):
                 if not isinstance(item, ast.Call):
                     continue
@@ -201,7 +205,7 @@ class Indexer:
                     key = literal(item.args[0]) or constants.get(name_of(item.args[0]))
                     if isinstance(key, str) and literal(kwargs.get("tables")) is True:
                         config_keys.add(key)
-                if func in {"load_table_from_duckdb", "overwrite_table_from_duckdb", "merge_table_from_duckdb"}:
+                if isinstance(item.func, ast.Name) and item.func.id in dual_load_bindings and func in {"load_table_from_duckdb", "overwrite_table_from_duckdb", "merge_table_from_duckdb"}:
                     load_calls.append(item)
                 if func in {"dynamic_mapping_dbt_bigquery", "dynamic_mapping_dbt_postgres"}:
                     selector = literal(kwargs.get("selector"))
@@ -224,7 +228,7 @@ class Indexer:
                         if isinstance(target, ast.Subscript) and isinstance(target.value, ast.Name) and target.value.id == "tables" and literal(target.slice) == alias:
                             for platform in ("postgres", "bigquery"):
                                 tid = self.node(f"table:{platform}:{table}", table, "table", platform, eid)
-                                self.edge(owner, tid, "configured_load", self.ev(path, call.lineno, call.end_lineno), certainty="conditional")
+                                self.edge(owner, tid, "configured_load", self.ev(path, call.lineno, call.end_lineno), certainty="conditional", support=[eid])
                                 self.nodes[tid]["evidence"] = list(dict.fromkeys(self.nodes[tid]["evidence"] + [eid]))
             if load_calls and not config_keys:
                 self.warnings.append({"path": path, "reason": "Load calls found but static tables config could not be resolved"})
@@ -246,12 +250,24 @@ class Indexer:
                               start_line=line, end_line=end_line)
             for path in self.paths(folder + "/models/**/*.yml") + self.paths(folder + "/models/**/*.yaml"):
                 text = self.read(path)
-                data = yaml.safe_load(text) or {}
-                for source in data.get("sources", []):
-                    for table in source.get("tables", []):
-                        logical = source["name"] + "." + table["name"]
-                        physical = source.get("schema", source["name"]) + "." + table.get("identifier", table["name"])
-                        eid = self.ev(path, 1, snippet=f"source {logical} -> {platform}:{physical} (YAML declaration)")
+                document = yaml.compose(text)
+                if not isinstance(document, yaml.MappingNode):
+                    continue
+                mapping = dict((k.value, v) for k, v in document.value)
+                sources = mapping.get("sources")
+                if not isinstance(sources, yaml.SequenceNode):
+                    continue
+                for source_node in sources.value:
+                    source = dict((k.value, v) for k, v in source_node.value)
+                    source_name = source["name"].value
+                    schema = source.get("schema", source["name"]).value
+                    for table_node in source["tables"].value:
+                        table = dict((k.value, v) for k, v in table_node.value)
+                        table_name = table["name"].value
+                        logical = source_name + "." + table_name
+                        physical = schema + "." + table.get("identifier", table["name"]).value
+                        eid = self.ev(path, table["name"].start_mark.line + 1,
+                                      snippet=f"source {logical} -> {platform}:{physical} (normalized YAML declaration)")
                         self.node(f"source:{platform}:{logical}", logical, "source", folder, eid)
                         tid = self.node(f"table:{platform}:{physical}", physical, "table", platform, eid)
                         self.edge(tid, f"source:{platform}:{logical}", "declared_source", eid)

@@ -34,6 +34,8 @@ class Graph:
         for ko, en in ALIASES.items():
             query = query.replace(ko, " " + en + " ")
         tokens = re.findall(r"[a-z][a-z0-9_.]+", query)
+        generic = {"core", "api", "airflow", "dbt", "dag", "postgres", "postgresql", "bigquery", "model", "models"}
+        specific = [t for t in tokens if t not in generic]
         scored = []
         for n in self.nodes.values():
             if kind and n["kind"] != kind:
@@ -41,16 +43,18 @@ class Graph:
             label = n["label"].lower()
             haystack = label + " " + n["layer"]
             score = 0
+            if specific and not any(t in haystack for t in specific):
+                continue
             for token in tokens:
                 if token == label:
                     score += 100
                 elif token in haystack:
-                    score += 20 + len(token)
+                    score += (3 if token in generic else 20 + len(token))
             if not query:
                 score = 1
             if score:
                 scored.append((score, n))
-        return [n for _, n in sorted(scored, key=lambda x: (-x[0], x[1]["id"]))[:limit]]
+        return [n for _, n in sorted(scored, key=lambda x: (-x[0], len(x[1]["label"]), x[1]["id"]))[:limit]]
 
     def path(self, source, target):
         if target not in self.down[source]:
@@ -97,6 +101,11 @@ class Graph:
         for node in seeds:
             for edge in self.outgoing[node["id"]] + self.incoming[node["id"]]:
                 include(edge)
+        # Dag이 사용하는 selector의 실제 모델 목록을 우선 포함한다.
+        for edge in list(selected):
+            if edge["relation"] == "runs_selector":
+                for selection in self.outgoing[edge["target"]]:
+                    include(selection)
         # Wirelog가 확인한 도달 관계에 한해서 원본 edge 경로를 재구성한다.
         for left in seeds[:4]:
             for right in seeds[:8]:
@@ -107,8 +116,8 @@ class Graph:
             for related in sorted(self.down[node["id"]], key=lambda k: (self.nodes[k]["kind"] != "model", k))[:5]:
                 for edge in self.path(node["id"], related):
                     include(edge)
-        ev_ids = list(dict.fromkeys([e["evidence"] for e in selected] + [e for n in seeds for e in n["evidence"]]))
-        if len(seeds) < 2 or any(word in question for word in ["전체", "구조", "처음", "역할", "architecture"]):
+        ev_ids = list(dict.fromkeys([eid for e in selected for eid in [e["evidence"], *e.get("support", [])]] + [e for n in seeds for e in n["evidence"]]))
+        if len(seeds) < 2 or any(word in question for word in ["전체", "구조", "처음", "역할", "architecture", "core", "api"]):
             ev_ids += self.data["overview"]
         evidence, budget = [], 32000
         for eid in dict.fromkeys(ev_ids):
@@ -129,9 +138,13 @@ class Graph:
         if not context["entities"]:
             return "일치하는 구성요소를 찾지 못했습니다. Dag ID, 모델명 또는 코드 경로를 지정해 주세요. 전체 구조는 README 근거에서 확인할 수 있습니다."
         lines = ["질문과 연결되는 정적 선언을 찾았습니다. 아래 화살표는 선행 요소에서 후행 요소를 가리킵니다."]
-        for edge in context["relations"][:16]:
+        priority = {"selects_model": 0, "runs_selector": 1, "dbt_ref": 2, "dbt_source": 3}
+        if "dbt" not in context["question"].lower() and "모델" not in context["question"]:
+            priority = {}
+        ordered = sorted(context["relations"], key=lambda e: priority.get(e["relation"], 5))
+        for edge in ordered[:20]:
             a, b = self.nodes[edge["source"]], self.nodes[edge["target"]]
             condition = " · 조건부 실행" if edge["certainty"] == "conditional" else ""
-            lines.append(f"• {a['label']} → {b['label']} ({edge['relation']}{condition}) [{edge['evidence']}]")
+            lines.append(f"• {a['layer']}: {a['label']} → {b['layer']}: {b['label']} ({edge['relation']}{condition}) [{edge['evidence']}]")
         lines.append("운영 실행 여부와 동적 설정은 이 결과로 확정할 수 없습니다. AI를 연결하면 이 근거를 문장으로 설명합니다.")
         return "\n\n".join(lines)
