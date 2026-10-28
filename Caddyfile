@@ -1,0 +1,7 @@
+{$DOMAIN} {
+    encode gzip
+    basic_auth {
+        {$APP_USERNAME} {$APP_PASSWORD_HASH}
+    }
+    reverse_proxy web:8080
+}

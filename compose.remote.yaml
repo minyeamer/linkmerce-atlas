@@ -1,0 +1,25 @@
+services:
+  web:
+    environment:
+      PUBLIC_URL: https://${DOMAIN:?Set DOMAIN}
+      ADMIN_TOKEN: ${ADMIN_TOKEN:?Set ADMIN_TOKEN for remote deployment}
+  proxy:
+    image: caddy:2.10.2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?Set DOMAIN}
+      APP_USERNAME: ${APP_USERNAME:?Set APP_USERNAME}
+      APP_PASSWORD_HASH: ${APP_PASSWORD_HASH:?Set APP_PASSWORD_HASH}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      web:
+        condition: service_healthy
+    restart: unless-stopped
+volumes:
+  caddy-data:
+  caddy-config:
