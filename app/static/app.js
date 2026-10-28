@@ -180,8 +180,14 @@ async function selectNode(id) {
         `${data.node.layer} · ${data.node.kind} · 상위 ${data.upstream_count}개 · 하위 ${data.downstream_count}개 (Wirelog)`,
       ),
     );
-    if (data.node.description)
-      $("node-summary").append(element("p", data.node.description));
+    if (data.node.description) {
+      const documentation = element("details", undefined, "node-doc");
+      documentation.append(
+        element("summary", "구성요소 문서 보기"),
+        element("p", data.node.description),
+      );
+      $("node-summary").append(documentation);
+    }
     if (data.node.schedule)
       $("node-summary").append(
         element("p", "코드에 선언된 schedule: " + data.node.schedule),
@@ -202,7 +208,7 @@ async function selectNode(id) {
                 " →",
             ),
           );
-        const button = element("button", nodes.get(key)?.label || key);
+        const button = element("button", displayName(nodes.get(key)) || key);
         button.onclick = () => selectNode(key);
         row.append(button);
       }
@@ -309,7 +315,7 @@ function drawGraph(data) {
     text.setAttribute("y", y + 19);
     text.setAttribute("font-size", "10");
     text.setAttribute("fill", id === focus ? "white" : "#527165");
-    const label = nodes.get(id)?.label || id;
+    const label = displayName(nodes.get(id)) || id;
     text.textContent = label.length > 32 ? label.slice(0, 29) + "…" : label;
     const title = document.createElementNS(ns, "title");
     title.textContent = label;
@@ -575,3 +581,10 @@ $("model").onchange = async () => {
     toast(error.message);
   }
 };
+
+function displayName(node) {
+  if (!node) return "";
+  return ["model", "table", "source"].includes(node.kind)
+    ? `${node.layer} · ${node.label}`
+    : node.label;
+}

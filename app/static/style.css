@@ -971,3 +971,17 @@ dialog select {
     margin: 0 5px;
   }
 }
+
+.node-doc {
+  margin: 12px 0;
+}
+.node-doc summary {
+  cursor: pointer;
+  color: var(--green);
+  font-size: 10px;
+}
+.node-doc p {
+  white-space: pre-wrap;
+  max-height: 240px;
+  overflow: auto;
+}
