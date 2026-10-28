@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Linkmerce Atlas</title><link rel="stylesheet" href="/static/style.css"><script src="/static/app.js" defer></script></head>
+<body>
+<aside class="sidebar">
+  <a class="brand" href="/"><span class="brand-icon">↗</span><span>Linkmerce <strong>Atlas</strong><small>PROJECT KNOWLEDGE EXPLORER</small></span></a>
+  <div class="workspace"><span class="repo-icon">⌘</span><div>minyeamer / linkmerce<small>소스 코드에서 연결한 지식</small></div><span class="dot"></span></div>
+  <div class="eyebrow">EXPLORE THE PROJECT</div>
+  <label class="search"><span>⌕</span><input id="search" placeholder="Dag, 모델, 모듈 검색" autocomplete="off"><kbd>/</kbd></label>
+  <div class="filters" id="filters"><button data-kind="" class="active">전체</button><button data-kind="dag">Dag</button><button data-kind="model">dbt</button><button data-kind="module">Core</button><button data-kind="table">테이블</button></div>
+  <div id="results" class="results" aria-live="polite"></div>
+  <div class="sidebar-bottom"><span class="dot"></span> Wirelog inference engine <button id="refresh" title="소스에서 관계 다시 추출">↻</button><small id="indexed">색인 준비 중…</small></div>
+</aside>
+<main>
+<header><div class="breadcrumb">Workspace <span>/</span> Linkmerce <span>/</span> <b>Architecture</b></div><button id="account-button" class="account-button"><span class="person">◎</span><span id="account-label">AI 계정 연결</span></button></header>
+<div class="page">
+  <div class="page-title"><div class="eyebrow">KNOW YOUR PIPELINE</div><h1>코드 사이의 연결을 읽다.</h1><p>Core부터 데이터 웨어하우스까지. 소스에 근거해 Linkmerce를 탐색하세요.</p></div>
+  <section class="stats" id="stats"><div><span>구성요소</span><b>—</b></div><div><span>선언된 관계</span><b>—</b></div><div><span>Wirelog 도달 관계</span><b>—</b></div><div><span>분석한 파일</span><b>—</b></div></section>
+  <section class="map-panel">
+    <div class="panel-heading"><div><span class="eyebrow">ARCHITECTURE MAP</span><h2 id="map-title">Linkmerce의 구성</h2></div><span class="pill">● &nbsp; 소스 기반 정적 분석</span></div>
+    <div id="layer-map" class="layer-map">
+      <div class="layer" data-query="linkmerce.core"><span class="layer-icon">{ }</span><small>01 · EXTRACT & TRANSFORM</small><h3>Core & API</h3><p>Extractor · Transformer<br>DuckDB · 외부 연동</p></div><span class="flow">→</span>
+      <div class="layer" data-query="smartstore_order"><span class="layer-icon blue">⌁</span><small>02 · ORCHESTRATE</small><h3>Airflow</h3><p>Dag · dual_load<br>실행 조건 · dbt selector</p></div><span class="flow">→</span>
+      <div class="layer" data-query="smartstore__sales_daily"><span class="layer-icon orange">◇</span><small>03 · MODEL</small><h3>dbt</h3><p>source · ref · macro<br>BigQuery / Postgres 모델</p></div><span class="flow">→</span>
+      <div class="layer" data-query="smartstore.order"><span class="layer-icon purple">▤</span><small>04 · DESTINATION</small><h3>Warehouses</h3><p>BigQuery · PostgreSQL<br>코드에 선언된 테이블</p></div>
+    </div>
+    <div id="node-view" hidden><div class="node-summary" id="node-summary"></div><div id="graph-canvas" class="graph-canvas"></div><div class="relations" id="relations"></div><div class="reach-lists" id="reach-lists"></div></div>
+    <div class="map-footer"><span>↗ 구성요소를 선택하면 직접 연결과 전이 관계를 확인할 수 있습니다.</span><button id="overview" hidden>전체 구조로 돌아가기 ↗</button></div>
+  </section>
+  <div class="work-grid">
+    <section class="chat-panel">
+      <div class="panel-heading"><div><span class="eyebrow">ASK WITH EVIDENCE</span><h2>Linkmerce에게 물어보세요</h2></div><select id="mode" aria-label="답변 방식"><option value="evidence">근거 탐색</option><option value="ai">AI 설명</option></select></div>
+      <div id="messages" class="messages"><div class="welcome"><div class="spark">✳</div><h3>어디부터 이해하고 싶으세요?</h3><p>코드에 선언된 관계와 출처를 찾아드립니다.<br>AI를 연결하면 같은 근거를 바탕으로 설명합니다.</p><div class="suggestions"><button>smartstore_order Dag은 어떤 dbt 모델과 연결돼?</button><button>dual_load와 BigQuery, Postgres의 관계를 설명해줘</button><button>core와 api, Airflow는 어떻게 연결돼?</button></div></div></div>
+      <form id="ask-form"><label class="composer"><textarea id="question" rows="2" placeholder="구성요소 이름과 궁금한 관계를 입력하세요…" maxlength="1800" required></textarea><div><span id="focus-label">전체 프로젝트에서 검색</span><button id="send" type="submit" aria-label="질문하기">↑</button></div></label></form>
+      <div class="chat-note">정적 분석으로 찾은 근거입니다. 운영 상태나 동적 실행 결과는 별도로 확인하세요.</div>
+    </section>
+    <section class="evidence-panel"><div class="panel-heading"><div><span class="eyebrow">SOURCE OF TRUTH</span><h2>답변의 근거</h2></div><span id="evidence-count" class="count">0</span></div><div id="evidence"><div class="empty-state">⌘<p>관계나 답변의 출처를 선택하면<br>파일 경로와 코드가 여기에 표시됩니다.</p></div></div></section>
+  </div>
+  <details class="diagnostics"><summary>분석 범위와 미해결 관계 <span id="warning-count"></span></summary><p>정적 import, 상수 Dag ID, tables 설정, dbt의 리터럴 ref/source, 알려진 macro, fqn/path selector를 분석합니다. 조건부 실행은 실제 실행을 보장하지 않습니다. 동적으로 생성된 SQL·Dag, 외부 패키지, 전체 함수 호출 그래프는 분석 범위에 포함되지 않습니다.</p><div id="warnings"></div><small id="revision"></small></details>
+</div>
+</main>
+<dialog id="account-dialog"><button class="close" id="close-dialog" aria-label="닫기">×</button><div class="eyebrow">YOUR AI CONNECTION</div><h2>내 AI 계정 연결</h2><p>선택한 계정으로 검색한 코드 근거와 질문을 전송합니다.</p><div id="connected-account" hidden><strong id="identity"></strong><p id="usage-label"></p><a id="usage" href="https://chatgpt.com/#settings/Usage" target="_blank" rel="noopener">ChatGPT 사용량 관리 ↗</a><button id="logout" class="secondary">연결 해제</button></div><div id="connect-options"><a id="chatgpt-login" class="primary-button" href="/api/auth/chatgpt">Continue with ChatGPT ↗</a><p id="oauth-note" class="muted"></p><div class="divider">또는 OpenAI API</div><form id="key-form"><label>API 키<input type="password" id="api-key" placeholder="sk-…" autocomplete="off" minlength="20" required></label><button class="primary-button" type="submit" id="key-submit">이 브라우저 세션에 연결</button></form><p class="muted">API 사용료는 해당 키의 OpenAI Platform 계정에 청구됩니다. 키는 서버에 암호화해 최대 12시간 보관하며, 브라우저 저장소에 저장하지 않습니다.</p></div><label id="model-control" hidden>사용할 모델<select id="model"></select></label><p id="auth-error" class="error" role="alert"></p></dialog>
+<div id="toast" role="status" hidden></div>
+</body></html>
