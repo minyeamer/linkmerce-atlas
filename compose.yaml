@@ -5,7 +5,7 @@ services:
       - "127.0.0.1:${PORT:-8088}:8080"
     environment:
       LINKMERCE_ROOT: /source/linkmerce
-      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1-mini}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-6-luna}
       PUBLIC_URL: ${PUBLIC_URL:-http://localhost:8088}
       CHATGPT_CLIENT_ID: ${CHATGPT_CLIENT_ID:-}
       CHATGPT_CLIENT_SECRET: ${CHATGPT_CLIENT_SECRET:-}

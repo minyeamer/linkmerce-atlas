@@ -72,8 +72,9 @@ class ApiKey(BaseModel):
 @router.get("/status")
 def status(request: Request):
     account = load(request)
-    return {"connected": bool(account), "provider": account.get("provider") if account else None,
+    return {"connected": bool(account), "default_model": os.getenv("OPENAI_MODEL", "gpt-6-luna"), "provider": account.get("provider") if account else None,
             "identity": account.get("identity", "API key connected") if account else None,
+            "selected_model": account.get("selected_model") if account else None,
             "chatgpt_enabled": bool(CLIENT_ID),
             "chatgpt_note": "원격 웹 연동에는 OpenAI가 승인한 OAuth 클라이언트와 구독 사용 권한이 필요합니다.",
             "manage_usage_url": "https://chatgpt.com/#settings/Usage"}
@@ -90,6 +91,20 @@ async def connect_key(body: ApiKey, request: Request):
     request.session.clear()
     save(request, {"provider": "openai", "key": body.key})
     return {"connected": True}
+
+
+class ModelSelection(BaseModel):
+    model: str = Field(min_length=1, max_length=150, pattern=r"^[a-zA-Z0-9._:-]+$")
+
+
+@router.post("/model")
+def select_model(body: ModelSelection, request: Request):
+    account = load(request)
+    if not account:
+        raise HTTPException(401, "Connect an AI account first")
+    account["selected_model"] = body.model
+    save(request, account)
+    return {"model": body.model}
 
 
 @router.get("/chatgpt")

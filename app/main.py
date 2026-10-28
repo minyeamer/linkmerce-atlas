@@ -134,7 +134,7 @@ class Question(BaseModel):
     question: str = Field(min_length=1, max_length=1800)
     focus: str | None = None
     mode: str = "evidence"
-    model: str = Field(default="gpt-4.1-mini", max_length=150)
+    model: str = Field(default=os.getenv("OPENAI_MODEL", "gpt-6-luna"), max_length=150)
 
 
 @app.post("/api/ask")
@@ -143,7 +143,10 @@ async def ask(body: Question, request: Request):
     context = current.context(body.question, body.focus)
     if body.mode == "ai":
         key, provider = await auth.credential(request)
-        result = await ai.answer(context, key, body.model)
+        effort = "low" if body.model in {"gpt-6-luna", "gpt-6.1-sol", "gpt-6.1-terra"} else None
+        result = await ai.answer(context, key, body.model,
+                                 max_output_tokens=4096 if provider == "openai" else None,
+                                 reasoning_effort=effort)
     elif body.mode == "evidence":
         provider = "evidence"
         result = current.evidence_answer(context)
