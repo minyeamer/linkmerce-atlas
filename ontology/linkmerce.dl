@@ -1,0 +1,6 @@
+// edge 방향: 공급자/선행 요소 -> 소비자/후행 요소.
+// 구성상 포함 관계는 dependency에 넣지 않는다.
+.decl dependency(upstream: int64, downstream: int64)
+.decl reaches(upstream: int64, downstream: int64)
+reaches(X, Y) :- dependency(X, Y).
+reaches(X, Z) :- reaches(X, Y), dependency(Y, Z).

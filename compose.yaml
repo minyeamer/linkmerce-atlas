@@ -1,0 +1,23 @@
+services:
+  web:
+    build: .
+    ports:
+      - "127.0.0.1:${PORT:-8088}:8080"
+    environment:
+      LINKMERCE_ROOT: /source/linkmerce
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1-mini}
+      PUBLIC_URL: ${PUBLIC_URL:-http://localhost:8088}
+      CHATGPT_CLIENT_ID: ${CHATGPT_CLIENT_ID:-}
+      CHATGPT_CLIENT_SECRET: ${CHATGPT_CLIENT_SECRET:-}
+      ADMIN_TOKEN: ${ADMIN_TOKEN:-}
+    volumes:
+      - ${LINKMERCE_PATH:-../linkmerce}:/source/linkmerce:ro
+      - index-data:/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/api/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+volumes:
+  index-data:

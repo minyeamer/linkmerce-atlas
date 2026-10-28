@@ -1,0 +1,8 @@
+fastapi==0.115.12
+uvicorn==0.34.2
+PyYAML==6.0.2
+httpx==0.28.1
+openai==1.99.9
+Authlib==1.6.4
+itsdangerous==2.2.0
+cryptography==46.0.3
