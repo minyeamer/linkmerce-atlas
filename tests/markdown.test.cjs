@@ -95,10 +95,10 @@ test("blocks raw HTML, executable links and remote image requests", () => {
   dom.window.close();
 });
 
-test("renders saved live answers without another AI request", () => {
+test("renders synthetic onboarding answers without an AI request", () => {
   const { dom, render } = setup();
   const report = JSON.parse(
-    readFileSync(path.join(root, "docs/evaluation-2026-10-28.json")),
+    readFileSync(path.join(root, "tests/fixtures/markdown-answers.json")),
   );
   for (const item of report.results) {
     const result = render(item.answer);

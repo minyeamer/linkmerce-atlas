@@ -1,0 +1,18 @@
+{
+  "synthetic": true,
+  "description": "공개용 합성 예제. 실제 실행 결과·회사 설정·계정 정보가 아니다.",
+  "results": [
+    {
+      "question": "store_order와 dbt 모델은 어떻게 연결돼?",
+      "answer": "`store_order` Dag은 **매출 모델**을 선택하는 selector와 연결됩니다. [E000000000001]\n\n- **BigQuery**: `store_sales` [E000000000002]\n- **Postgres**: `store_sales_summary` [E000000000003]"
+    },
+    {
+      "question": "order API는 어떤 모듈을 사용해?",
+      "answer": "API는 추출 모듈과 변환 모듈을 가져옵니다. [E000000000004]\n\n```python\nfrom example.core.order import Extractor, Transformer\n```"
+    },
+    {
+      "question": "어제 운영 환경에서 성공했는지 알 수 있어?",
+      "answer": "제공된 정적 선언만으로는 운영 실행 성공 여부를 확인할 수 없습니다. 실행 기록을 별도로 확인해야 합니다. [E000000000005]"
+    }
+  ]
+}

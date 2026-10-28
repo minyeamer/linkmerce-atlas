@@ -5,3 +5,25 @@
 __pycache__
 work
 node_modules/
+
+# 사용자별 환경·계정·실행 산출물
+.env.*
+!.env.example
+data/
+.runtime/
+reports/
+*.sqlite
+*.sqlite3
+*.sqlite-*
+*.sqlite3-*
+*.pem
+*.key
+*.p12
+*.pfx
+**/auth.json
+**/credentials.json
+**/credentials.yaml
+**/credentials.yml
+**/service_account.json
+**/snapshot.json
+**/evaluation*.json

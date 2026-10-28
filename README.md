@@ -7,7 +7,8 @@ Linkmerce를 처음 접하는 사람이 **Core · API · Airflow · dbt · BigQu
 ## 실행
 
 ```bash
-cd path/to/linkmerce-atlas
+git clone https://github.com/minyeamer/linkmerce-atlas.git
+cd linkmerce-atlas
 cp .env.example .env
 docker compose up -d --build
 ```
@@ -52,7 +53,7 @@ AI 답변의 제목, 강조, 목록, 인라인 코드, 코드 블록, 인용문�
 
 API 키와 OAuth 토큰은 서버 SQLite에 Fernet으로 암호화해 저장한다. 암호화 키와 세션 서명 키는 Docker의 `index-data` 볼륨에 저장한다. 브라우저 쿠키에는 임의 세션 식별자만 넣는다. 자격 증명을 localStorage, Git 또는 응답 본문에 넣지 않는다. 계정 연결은 최대 12시간 유효하며 연결 해제 시 삭제한다. 서버 관리자와 볼륨 접근 권한자는 서버의 자격 증명을 복호화할 수 있다.
 
-기본 추천 모델은 목록에 있을 경우 `gpt-6-luna`이며, 설정한 `OPENAI_MODEL`과 사용자별 선택을 우선한다. 여러 경로를 비교하는 설명 품질은 `gpt-6.1-sol`과 비교할 수 있다. 실제 Luna 3회 검증 결과는 `docs/validation.md`에 기록했다.
+기본 추천 모델은 목록에 있을 경우 `gpt-6-luna`이며, 설정한 `OPENAI_MODEL`과 사용자별 선택을 우선한다. 여러 경로를 비교하는 설명 품질은 `gpt-6.1-sol`과 비교할 수 있다. 검증 범위와 공개용 합성 예제는 `docs/validation.md`에 설명했다.
 
 API 키 검증과 모델 목록 조회가 성공해도 유료 추론 가능 여부까지 확인된 것은 아니다. 실제 AI 응답이 `response.completed`에 도달해야 호출 성공으로 처리한다. 사용 한도·권한·중단 오류를 성공한 답변으로 표시하지 않고, 다른 계정이나 과금 방식으로 자동 전환하지 않는다.
 
@@ -121,7 +122,7 @@ docker compose run --rm web python -m unittest discover -s tests -v
 git diff --check
 ```
 
-프런트엔드 렌더링 검증은 Node.js 개발 환경에서 실행한다. 저장된 답변을 사용하므로 AI API 비용이 발생하지 않는다.
+프런트엔드 렌더링 검증은 Node.js 개발 환경에서 실행한다. 합성 답변을 사용하므로 AI API 비용이 발생하지 않는다.
 
 ```bash
 npm ci --ignore-scripts
@@ -149,3 +150,7 @@ docs/                설계와 검증 기록
 ```
 
 Wirelog 소스는 `63f75a25139795b79f0ca75783c9d771c8fc892f`에 고정한다. 엔진을 업데이트할 때 ABI·규칙·실제 경로 테스트를 함께 확인한다. Wirelog는 LGPL-3.0-or-later이며 공유 라이브러리로 연결한다. 이미지 `/opt/wirelog-src`에 해당 소스·라이선스·빌드 파일을 포함한다. 원격 배포 절차는 `docs/deployment.md`를 참고한다.
+
+## 라이선스
+
+자체 코드는 [MIT License](LICENSE)를 따른다. 의존성과 함께 배포하는 코드의 라이선스는 [제3자 소프트웨어 안내](THIRD_PARTY_NOTICES.md)를 참고한다.

@@ -1,6 +1,7 @@
 {
   "name": "linkmerce-atlas-ui",
   "private": true,
+  "license": "MIT",
   "scripts": {
     "vendor:markdown": "node scripts/vendor-markdown.mjs",
     "test": "node --test tests/markdown.test.cjs"
