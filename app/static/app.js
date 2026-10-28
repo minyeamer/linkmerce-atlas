@@ -353,16 +353,14 @@ function addMessage(role, text) {
     element("div", role === "user" ? "YOU" : "LINKMERCE ATLAS", "role"),
   );
   const body = element("div", undefined, "body");
-  const pattern = /\[(E[0-9a-f]{12})\]/g;
-  let end = 0;
-  for (const match of text.matchAll(pattern)) {
+  if (role === "assistant") {
+    body.classList.add("markdown-body");
     body.append(
-      document.createTextNode(text.slice(end, match.index)),
-      cite(match[1], match[1].slice(0, 7)),
+      window.LinkmerceMarkdown.render(text, (id) => cite(id, id.slice(0, 7))),
     );
-    end = match.index + match[0].length;
+  } else {
+    body.textContent = text;
   }
-  body.append(document.createTextNode(text.slice(end)));
   box.append(body);
   $("messages").append(box);
   box.scrollIntoView({ behavior: "smooth", block: "nearest" });

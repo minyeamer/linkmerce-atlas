@@ -985,3 +985,116 @@ dialog select {
   max-height: 240px;
   overflow: auto;
 }
+
+/* 마크다운 블록의 여백은 HTML 요소가 담당한다. 사용자 입력은 평문으로 유지한다. */
+.message .body.markdown-body {
+  white-space: normal;
+}
+.markdown-body > :first-child {
+  margin-top: 0;
+}
+.markdown-body > :last-child {
+  margin-bottom: 0;
+}
+.markdown-body p {
+  margin: 0.75em 0;
+  line-height: inherit;
+}
+.markdown-body :is(h1, h2, h3, h4, h5, h6) {
+  margin: 1.25em 0 0.6em;
+  color: var(--ink);
+  font-weight: 650;
+  line-height: 1.5;
+  letter-spacing: -0.25px;
+}
+.markdown-body h1 {
+  font-size: 1.55em;
+}
+.markdown-body h2 {
+  font-size: 1.35em;
+}
+.markdown-body h3 {
+  font-size: 1.18em;
+}
+.markdown-body :is(h4, h5, h6) {
+  font-size: 1em;
+}
+.markdown-body :is(ul, ol) {
+  margin: 0.7em 0;
+  padding-left: 1.8em;
+}
+.markdown-body li {
+  margin: 0.4em 0;
+  padding-left: 0.15em;
+}
+.markdown-body li > :is(ul, ol) {
+  margin: 0.3em 0;
+}
+.markdown-body li > p {
+  margin: 0.35em 0;
+}
+.markdown-body code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.9em;
+  background: #f0f4f6;
+  border: 1px solid #e6ebee;
+  border-radius: 4px;
+  padding: 0.12em 0.35em;
+  overflow-wrap: anywhere;
+}
+.markdown-body pre {
+  margin: 1em 0;
+  padding: 13px 15px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #f6f8fa;
+  overflow: auto;
+  white-space: pre;
+  line-height: 1.65;
+  tab-size: 2;
+}
+.markdown-body pre code {
+  padding: 0;
+  border: 0;
+  background: none;
+  overflow-wrap: normal;
+}
+.markdown-body blockquote {
+  margin: 1em 0;
+  padding: 0.25em 1em;
+  border-left: 3px solid #9fcbbb;
+  color: #647b79;
+  background: #f7fbf9;
+}
+.markdown-body a {
+  color: var(--green);
+  text-underline-offset: 3px;
+}
+.markdown-body hr {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 1.3em 0;
+}
+.markdown-table {
+  max-width: 100%;
+  margin: 1em 0;
+  overflow-x: auto;
+}
+.markdown-table table {
+  border-collapse: collapse;
+  font-size: 0.95em;
+  width: 100%;
+}
+.markdown-table :is(th, td) {
+  border: 1px solid var(--line);
+  padding: 7px 10px;
+  text-align: left;
+  min-width: 80px;
+}
+.markdown-table th {
+  background: #f3f7f5;
+  font-weight: 600;
+}
+.markdown-body .cite {
+  vertical-align: baseline;
+}

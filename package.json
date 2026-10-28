@@ -1,0 +1,13 @@
+{
+  "name": "linkmerce-atlas-ui",
+  "private": true,
+  "scripts": {
+    "vendor:markdown": "node scripts/vendor-markdown.mjs",
+    "test": "node --test tests/markdown.test.cjs"
+  },
+  "devDependencies": {
+    "dompurify": "3.4.17",
+    "jsdom": "29.1.1",
+    "markdown-it": "15.0.3"
+  }
+}

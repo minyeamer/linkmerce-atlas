@@ -38,6 +38,12 @@ docker compose down
 
 질문마다 독립적으로 검색한다. 이전 질문의 대화 이력을 모델에 전달하지 않으므로, 후속 질문에도 대상 이름을 적는다. 선택한 구성요소는 질문 범위에 포함된다.
 
+## 답변 마크다운
+
+AI 답변의 제목, 강조, 목록, 인라인 코드, 코드 블록, 인용문과 표를 렌더링한다. 출처 ID는 문장·목록·표 안에서도 클릭할 수 있는 버튼으로 유지하며, 코드 예제 안의 출처 문법은 원문 그대로 표시한다. 사용자 질문은 일반 텍스트로 표시한다.
+
+렌더러는 로컬에 묶은 markdown-it와 DOMPurify를 사용한다. 원시 HTML과 실행 가능한 링크는 허용하지 않고, 외부 이미지는 자동으로 불러오지 않는다. 브라우저에서 CDN에 접속하지 않으며 Docker 실행에도 Node.js가 필요 없다.
+
 ## AI 계정
 
 ### 사용자별 OpenAI API 키
@@ -113,6 +119,15 @@ Wirelog는 도달 여부를 계산한다. Python은 원본 edge를 따라 가장
 ```bash
 docker compose run --rm web python -m unittest discover -s tests -v
 git diff --check
+```
+
+프런트엔드 렌더링 검증은 Node.js 개발 환경에서 실행한다. 저장된 답변을 사용하므로 AI API 비용이 발생하지 않는다.
+
+```bash
+npm ci --ignore-scripts
+npm test
+# 의존성을 업데이트한 경우에만 브라우저용 파일 갱신
+npm run vendor:markdown
 ```
 
 테스트는 실제 Wirelog 라이브러리를 사용해 재귀·순환·비연결 관계, Core→API→Dag→dbt 경로, Postgres/BigQuery 분리, 검색 관련성, 주석 및 macro 범위, 설정 비밀정보 제외, 경로 이탈 차단, 암호화된 사용자 세션 분리, API 보호를 검증한다.
